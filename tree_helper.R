@@ -164,3 +164,36 @@ getTruth <- function(n, trueInds)
   truth[trueInds] <- 1
   as.factor(truth)
 }
+                  
+compFdratEffSizes <- function(nodes) {
+    effSizes <- sort(abs(mcols(yA)[nodes, "log2FC"]), decreasing = T)
+    fdrs <- c()
+    ls <- c()
+    for(i in seq(effSizes)){
+        rNodes <- nodes[abs(mcols(yA)[nodes, "log2FC"]) >= effSizes[i]]
+        ls <- c(ls, length(rNodes))
+        fdrs <- c(fdrs,sum(abs(logFCNodes[rNodes]) < rootFC)/length(rNodes))
+    }
+    return(list("fdrs"=fdrs, "lengths"=ls, "effSizes"=effSizes, nodes=rNodes))
+}
+plotScatPlot <- function(vals, size=20) {
+    df <- data.frame(vals)
+    pFDR <- ggplot(df, aes(x=effSizes,y=fdrs)) +
+        geom_point() +
+        xlab("Absolute LFC") +
+        ylab("FDR") +
+        theme_bw() +
+        theme(text=element_text(size=size))
+#         ggtitle(paste("Unique nodes obtained at FDR", nFDR, "for", type))
+    
+    pL <- ggplot(df, aes(x=effSizes,y=lengths)) +
+        geom_point() +
+        xlab("Absolute LFC") +
+        ylab("Number of nodes") +
+        theme_bw() +
+        theme(text=element_text(size=size))
+#         ggtitle(paste("Unique nodes obtained at FDR", nFDR, "for", type))
+    
+    pp <- ggarrange(pFDR, pL, common.legend = T)
+    pp
+}
