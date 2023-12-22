@@ -197,3 +197,101 @@ plotScatPlot <- function(vals, size=20) {
     pp <- ggarrange(pFDR, pL, common.legend = T)
     pp
 }
+
+### This function returns the useful elements needed for plot construction, if things can be automated, otherwise we shall start from scratch
+#' @ tse - TreeSummarizedExperiment
+#' @ tL - tree list
+#' @ indlist - for the index set
+#' @ gM - for the index set
+#' @ i - FDR ind
+#' @ j - node index in the index set
+extPreInf <- function(tse, y, tL, indList, txpM, gM, i, j) {
+    tree <- rowTree(tse)
+    iNode <- tL[[i]][indList[[i]][[j]]]
+    txShow <- rownames(tse)[Descendants(tree,iNode)[[1]]]
+    print(txShow)
+    anc <- Ancestors(tree, iNode)
+    anc <- ifelse(length(anc)==1, iNode, anc[length(anc)-1])
+    treeSub <- treeio::tree_subset(treeCons, anc, levels_back = 0)
+    
+    gs <- txpM %>% 
+        filter(tx_name %in% treeSub$tip) %>%
+        tibble::as_tibble() %>%
+        select(ensID) %>%
+        unlist %>%
+        unique
+    print(paste("Genes", gs))
+    
+    gTxps <- txpM %>% 
+        filter(ensID == gs[1]) %>%
+        tibble::as_tibble() %>%
+        select(tx_name) %>%
+        unlist
+    
+    g <- gM %>% 
+        filter(ensID == gs[1]) %>%
+        tibble::as_tibble()
+
+    print(gTxps)
+    print(treeSub$tip)
+    print(all(treeSub$tip %in% gTxps))
+    print(all(gTxps %in% treeSub$tip))
+    txpMin <- gTxps[which.min(mcols(y)[gTxps, "pvalue"])]
+    
+    if(length(txpMin)==0) {
+        txpMin <- gTxps[which.max(abs(mcols(y)[gTxps, "log10mean"]))]
+    }
+    minTSInd <- match(txpMin, treeSub$tip)
+    return(list(tSub=treeSub, txpMin=txpMin, txShow=txShow, minTInd=minTSInd, iNode=iNode, g=g))
+}
+
+### This function plots the infRep plot
+plotIReps <- function(y, txpMin, iNode, lp="right") {
+    legPos = ifelse(lp=="right", "topright", "topleft")
+    cex=1.6
+    pTxp <- as.grob(function() fishpond::plotInfReps(y, txpMin, x = "condition", legend=TRUE,
+                              main=txpMin, legendTitle=TRUE, legendCex=cex,
+                             legendPos = legPos))
+    pInn <- as.grob(function() fishpond::plotInfReps(y, iNode, x = "condition", legend=TRUE,
+                              main="trenDi Candidate Node", legendTitle=TRUE, legendCex=cex,
+                             legendPos = legPos))
+    return(list(pTxp, pInn))    
+}
+
+plotTree <- function(treeSub, iNode, txNode, of=20.5, ofex=4, xlim=NA) {
+    suppressPackageStartupMessages(library(ggtree))
+    suppressPackageStartupMessages(library(ggplot2))
+    xx <- ifelse(is.na(xlim), 80, xlim)
+    pTree <- ggtree(treeSub) + #ggtitle("Tree representing the transcripts covered by gene ENSMUSG00000070509") +
+        xlim(NA, xx) +
+        geom_tiplab(size=5.5, hjust=-0.1) +
+        geom_point2(aes(subset=(node==iNode), color="red"), 
+                size=5, fill='red', show.legend=T) +
+        geom_point2(aes(subset=(node==txNode), color = "black"), 
+                size=5, fill='black', show.legend=T) +
+        geom_cladelab(node = iNode, label = "", textcolour="red", barsize=2,
+                      barcolour="red",  fontsize=5, offset = of) + 
+        geom_cladelab(node = txNode, label = "", textcolour="black",
+                      fontsize=5, offset = of+ofex) +
+        theme(legend.position = "bottom", legend.text=element_text(size=18),
+             plot.title=element_text(size=18, face="bold", hjust=0.5)) +
+        scale_color_manual(name = "", labels=c("Transcript with the lowest pvalue", "Candidate node"),
+               values=c("black", "red"))
+    return(pTree)
+}
+
+parF <- function(g, txShow, treeSub, chromSt=100, chromEnd=200, fs=14) {
+    par <- plotgardener::pgParams(
+          chrom = as.character(g[["seqnames"]]), 
+          chromstart = g[["start"]]-chromSt, chromend = g[["end"]]+chromEnd,
+          assembly = "mm10", just = c("left", "bottom"), fontsize = fs,
+        default.units = 
+        "inches"
+        )
+    
+    hilite <- data.frame(transcript=c(txShow, setdiff(treeSub$tip, txShow)), 
+                     color=c(rep("red", length(txShow)),
+                             rep("blue", length(setdiff(treeSub$tip, txShow)))))
+    
+    return(list(par, hilite))
+}
