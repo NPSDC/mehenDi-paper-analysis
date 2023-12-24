@@ -30,8 +30,6 @@ set.seed(10)
 yInn <- swish(yAll[(l+1):nrow(yAll),], x = "condition")
 
 pvals <- c(mcols(yTxps)[["pvalue"]], mcols(yInn)[["pvalue"]])
-signs <- computeSign(yAll, "condition")
-mIRV <- mcols(yAll)[["meanInfRV"]]
 
 ### Running treeclimbR
 mcols(yAll)[["pvalue"]] <- c(mcols(yTxps)[["pvalue"]], mcols(yInn)[["pvalue"]])
