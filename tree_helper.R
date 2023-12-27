@@ -206,18 +206,18 @@ plotScatPlot <- function(vals, size=20) {
 #' @ i - FDR ind
 #' @ j - node index in the index set
 extPreInf <- function(tse, y, tL, indList, txpM, gM, i, j) {
-    tree <- rowTree(tse)
+    treeCons <- rowTree(tse)
     iNode <- tL[[i]][indList[[i]][[j]]]
     txShow <- rownames(tse)[Descendants(tree,iNode)[[1]]]
     print(txShow)
     anc <- Ancestors(tree, iNode)
     anc <- ifelse(length(anc)==1, iNode, anc[length(anc)-1])
-    treeSub <- treeio::tree_subset(treeCons, anc, levels_back = 0)
-    
+    treeSub <- tidytree::tree_subset(treeCons, anc, levels_back = 0)
+    print(treeSub)
     gs <- txpM %>% 
         filter(tx_name %in% treeSub$tip) %>%
         tibble::as_tibble() %>%
-        select(ensID) %>%
+        dplyr::select(ensID) %>%
         unlist %>%
         unique
     print(paste("Genes", gs))
@@ -225,7 +225,7 @@ extPreInf <- function(tse, y, tL, indList, txpM, gM, i, j) {
     gTxps <- txpM %>% 
         filter(ensID == gs[1]) %>%
         tibble::as_tibble() %>%
-        select(tx_name) %>%
+        dplyr::select(tx_name) %>%
         unlist
     
     g <- gM %>% 
@@ -246,13 +246,13 @@ extPreInf <- function(tse, y, tL, indList, txpM, gM, i, j) {
 }
 
 ### This function plots the infRep plot
-plotIReps <- function(y, txpMin, iNode, lp="right") {
+plotIReps <- function(y, txpMin, iNode, lp="right",x="condition") {
     legPos = ifelse(lp=="right", "topright", "topleft")
     cex=1.6
-    pTxp <- as.grob(function() fishpond::plotInfReps(y, txpMin, x = "condition", legend=TRUE,
+    pTxp <- as.grob(function() fishpond::plotInfReps(y, txpMin, x = x, legend=TRUE,
                               main=txpMin, legendTitle=TRUE, legendCex=cex,
                              legendPos = legPos))
-    pInn <- as.grob(function() fishpond::plotInfReps(y, iNode, x = "condition", legend=TRUE,
+    pInn <- as.grob(function() fishpond::plotInfReps(y, iNode, x = x, legend=TRUE,
                               main="trenDi Candidate Node", legendTitle=TRUE, legendCex=cex,
                              legendPos = legPos))
     return(list(pTxp, pInn))    
@@ -280,13 +280,12 @@ plotTree <- function(treeSub, iNode, txNode, of=20.5, ofex=4, xlim=NA) {
     return(pTree)
 }
 
-parF <- function(g, txShow, treeSub, chromSt=100, chromEnd=200, fs=14) {
+parF <- function(g, txShow, treeSub, chromSt=100, chromEnd=200, fs=14, assemb="mm10") {
     par <- plotgardener::pgParams(
           chrom = as.character(g[["seqnames"]]), 
           chromstart = g[["start"]]-chromSt, chromend = g[["end"]]+chromEnd,
-          assembly = "mm10", just = c("left", "bottom"), fontsize = fs,
-        default.units = 
-        "inches"
+          assembly = assemb, just = c("left", "bottom"), fontsize = fs,
+        default.units = "inches"
         )
     
     hilite <- data.frame(transcript=c(txShow, setdiff(treeSub$tip, txShow)), 
