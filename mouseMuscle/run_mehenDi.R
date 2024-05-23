@@ -29,11 +29,11 @@ yInn <- fishpond::swish(yAll[(l+1):nrow(yAll),], x = "condition")
 
 pvals <- c(mcols(yTxps)[["pvalue"]], mcols(yInn)[["pvalue"]])
 
-
+mehenDiRes <- list()
 alphas <- c(0.01, 0.05, 0.1)
 for(i in seq_along(alphas)) {
     tic()
-    print(system.time(mehenDiRes <- mehenDi::mehenDi(yAll, x="condition", pvalues=pvals, 
+    print(system.time(mehenDiRes[[i]] <- mehenDi::mehenDi(yAll, x="condition", pvalues=pvals, 
         minP=0.7, alpha=alphas[i])))
     toc()
 }
