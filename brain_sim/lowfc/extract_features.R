@@ -40,7 +40,7 @@ set.seed(10)
 yTerm <- fishpond::swish(yTerm, x="condition")
                            
 #### Loading features from tree based methods
-load(file.path(saveDir, "trenDiRes.RData"))
+load(file.path(saveDir, "mehenDiRes.RData"))
 load(file.path(saveDir, "bouthBrain.RData"))
 load(file.path(saveDir, "bSwishCons.RData"))
 
@@ -52,7 +52,7 @@ detNodes[["Terminus"]] <- lapply(c(0.01, 0.05, 0.1), function(x) {
         nodes <- rownames(yTerm)[which(mcols(yTerm)[,"qvalue"] <= x)]
         match(nodes, names(yAggTermThrNS))
     })
-detNodes[["trenDi"]] <- lapply(trenDiRes, function(ta) ta[["candNodes"]])
+detNodes[["mehenDi"]] <- lapply(mehenDiRes, function(ta) ta[["selNodes"]])
 detNodes[["treeClimbR(N)"]] <- lapply(bSwish, function(sw) sw$output[sw$output$signal.node,][["node"]])
 detNodes[["treeClimbR(L)"]] <- lapply(bSwish, function(sw) unlist(phangorn::Descendants(treeCons,sw$output[sw$output$signal.node,][["node"]])))
 save(detNodes, file=file.path(saveDir,"detNodes.RData"))
@@ -65,7 +65,7 @@ negNodes[["Terminus"]] <- lapply(c(0.01, 0.05, 0.1), function(x) {
                                                  which(mcols(yTerm)[,"qvalue"] <= x))]
         match(nodes, rownames(yAggTermThrNS))
     })
-negNodes[["trenDi"]] <- lapply(detNodes[["trenDi"]], function(nodes) setdiff(seq(nrow(y)), unlist(phangorn::Descendants(treeCons, nodes))))
+negNodes[["mehenDi"]] <- lapply(detNodes[["mehenDi"]], function(nodes) setdiff(seq(nrow(y)), unlist(phangorn::Descendants(treeCons, nodes))))
 negNodes[["treeClimbR(N)"]] <- lapply(detNodes[["treeClimbR(N)"]], function(det) setdiff(seq(nrow(y)), unlist(phangorn::Descendants(treeCons, det))))
 negNodes[["treeClimbR(L)"]] <- lapply(detNodes[["treeClimbR(L)"]], function(det) setdiff(seq(nrow(y)), det))
 save(negNodes, file=file.path(saveDir,"negNodes.RData"))
