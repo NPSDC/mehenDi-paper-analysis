@@ -1,3 +1,5 @@
+#### Loading data
+suppressPackageStartupMessages(library(pracma))
 quantDir <- "/fs/cbcb-scratch/jfan03/treeterm-paper/output/seed=1_fc=2:6/post_type=gibbs_nrep=100_tf=100/salmon_quants"
 saveDir <- "../../environment/brain_sim_normal"
 samples <- as.vector(outer(c(1:6), c(1,2), function(x,y) paste(x,y,sep="_")))
@@ -23,23 +25,21 @@ yInn <- fishpond::swish(yAll[(l+1):nrow(yAll),], x = "condition")
 
 pvals <- c(mcols(yTxps)[["pvalue"]], mcols(yInn)[["pvalue"]])
 
+
 alphas <- c(0.01, 0.05, 0.1)
-
-minPs <- c(0.60, 0.65, seq(0.75, 0.90, 0.05))
-mirvThresh <- c(seq(0, 0.35, 0.05), seq(0.50, 1, 0.1))
-mehenDiResPar <- vector(mode="list", length(minPs) + length(mirvThresh))
-names(mehenDiResPar) <- c(paste("minP", minPs,sep="="), paste("mirvThresh", mirvThresh,sep="="))
-
-for(i in seq_along(minPs)) {
-	    mehenDiResPar[[i]] <- lapply(alphas, function(alpha) mehenDi::mehenDi(yAll, x="condition", pvalues=pvals, 
-									               minP=minPs[i], alpha=alpha))
-    
+mehenDiRes <- list()
+for(i in seq_along(alphas)) {
+    tic()
+    print(system.time(mehenDiRes[[i]] <- mehenDi::mehenDi(yAll, x="condition", pvalues=pvals, 
+        minP=0.7, alpha=alphas[i])))
+    toc()
 }
-ll <-length(minPs)
-for(i in seq_along(mirvThresh)) {
-	    j <- ll+i
-    mehenDiResPar[[j]] <- lapply(alphas, function(alpha) mehenDi::mehenDi(yAll, x="condition", pvalues=pvals, 
-								               minP=0.7, alpha=alpha, mIRVThresh=mirvThresh[i]))
-        
+save(mehenDiRes, file=file.path(saveDir,"mehenDiRes.RData"))
+
+alphas <- c(0.01, 0.05, 0.1)
+for(i in seq_along(alphas)) {
+    tic()
+    print(system.time(ss <- mehenDi::mehenDi(yAll, x="condition", pvalues=pvals, 
+        minP=0.7, alpha=alphas[i], cores = 4)))
+    toc()
 }
-save(mehenDiResPar, file=file.path(saveDir,"mehenDiResPar.RData"))
