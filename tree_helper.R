@@ -258,7 +258,7 @@ plotIReps <- function(y, txpMin, iNode, lp="right",x="condition", cex=1.6) {
                               main=txpMin, legendTitle=TRUE, legendCex=cex,
                              legendPos = legPos, mainCex=cex, axisCex=cex,labCex=cex))
     pInn <- as.grob(function() plotInfReps(y, iNode, x = x, legend=TRUE,
-                              main="mehenDi Selected Node", legendTitle=TRUE, legendCex=cex,
+                              main="mehenDi selected node", legendTitle=TRUE, legendCex=cex,
                              legendPos = legPos, mainCex=cex, axisCex=cex,labCex=cex))
     return(list(pTxp, pInn))    
 }
